@@ -1,0 +1,136 @@
+.page {
+  min-height: 100vh;
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(135deg, #141e30, #243b55);
+  color: #fff;
+}
+
+.container {
+  width: 100%;
+  max-width: 700px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 16px;
+  padding: 28px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+.textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.button {
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: all 0.25s;
+}
+
+.button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.subButton {
+  background: none;
+  border: none;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* ===== 日付レンジ ===== */
+.dateRange {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dateCard {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rangeArrow {
+  font-size: 18px;
+  opacity: 0.7;
+  padding-top: 18px;
+}
+
+/* 日付入力 */
+.dateInput {
+  padding: 10px 12px;
+  border-radius: 8px;
+
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+
+  font-size: 14px;
+}
+
+/* フォーカス時 */
+.dateInput:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.7);
+}

@@ -1,0 +1,88 @@
+/* ページ全体 */
+.login-root {
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+/* ガラスカード */
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+/* タイトル */
+.login-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+}
+
+/* フォームレイアウト */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 入力欄（inputStyle 相当） */
+.login-input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #ffffff;
+  color: #000000;
+  font-size: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+.login-input:focus {
+  border-color: #66a3ff;
+  box-shadow: 0 0 0 2px rgba(102, 163, 255, 0.4);
+}
+
+/* ボタン（buttonStyle 相当） */
+.login-button {
+  padding: 12px 20px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s;
+  margin-top: 14px;
+}
+
+.login-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+/* エラー表示 */
+.login-error {
+  margin-top: 12px;
+  color: #ff8080;
+  font-size: 14px;
+}

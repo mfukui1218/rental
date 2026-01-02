@@ -1,0 +1,117 @@
+.page {
+  min-height: 100vh;
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(135deg, #141e30, #243b55);
+  color: #fff;
+}
+
+.container {
+  width: 100%;
+  max-width: 900px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 16px;
+  padding: 28px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.count {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.partsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 18px;
+}
+
+.cardWrap {
+  position: relative;
+}
+
+.cardButton {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 16px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  cursor: default;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cardButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.cardUnit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.partName {
+  font-weight: 800;
+  font-size: 14px;
+  color: #111;
+}
+
+.animal {
+  font-size: 11px;
+  color: #777;
+}
+
+.desc {
+  font-size: 12px;
+  color: #444;
+  margin-top: 2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  padding: 4px 10px;
+  width: fit-content;
+}
+
+.empty {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 13px;
+  opacity: 0.9;
+}
