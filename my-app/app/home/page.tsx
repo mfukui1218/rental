@@ -3,6 +3,7 @@
 
 import { useRouter } from "next/navigation";
 import styles from "./home.module.css";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 type MenuItem = {
   title: string;
@@ -13,10 +14,24 @@ type MenuItem = {
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, ready, isAdminEmail } = useRequireAuth();
+
+  if (!ready) {
+    return <div>読み込み中...</div>;
+  }
 
   const items: MenuItem[] = [
     { title: "レンタル商品一覧", desc: "レンタルできる物件を見る", href: "/rentals" },
-    { title: "", desc: "物件・予約の管理者用", href: "/login", variant: "admin" },
+
+    // user がいるときだけ
+    ...(user
+      ? [{ title: "トーク", desc: "管理者とのトーク", href: `/talk/${user.uid}` } as MenuItem]
+      : []),
+
+    // 管理者だけ表示（見た目の制御）
+    ...(isAdminEmail
+      ? [{ title: "管理者用", desc: "物件・予約の管理者用", href: "/admin", variant: "admin" } as MenuItem]
+      : []),
   ];
 
   return (

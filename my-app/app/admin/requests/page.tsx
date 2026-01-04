@@ -1,10 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, orderBy, query, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  Timestamp,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import styles from "./page.module.css";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 type RentalRequest = {
   id: string;
@@ -63,25 +71,20 @@ function statusLabel(s?: RentalRequest["status"]) {
 }
 
 export default function RentalRequestsPage() {
-  const [uid, setUid] = useState<string | null>(null);
+  // ✅ Hooks は最上部で全部呼ぶ
+  const { user, ready, isAdminEmail } = useRequireAuth();
+
   const [items, setItems] = useState<RentalRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // ✅ admin かつ user が確定した後にだけ購読
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setUid(user?.uid ?? null);
-      setLoading(false);
-    });
-    return () => unsub();
-  }, []);
+    if (!ready || !user || !isAdminEmail) return;
 
-  useEffect(() => {
-    if (!uid) {
-      setItems([]);
-      return;
-    }
-
-    const q = query(collection(db, "rentalRequests"), orderBy("createdAt", "desc"));
+    const q = query(
+      collection(db, "rentalRequests"),
+      orderBy("createdAt", "desc")
+    );
 
     const unsub = onSnapshot(
       q,
@@ -99,21 +102,29 @@ export default function RentalRequestsPage() {
     );
 
     return () => unsub();
-  }, [uid]);
+  }, [ready, user, isAdminEmail]);
 
-  if (loading) return <div className={styles.page}><div className={styles.container}>読み込み中...</div></div>;
+  const deleteRentalRequest = async (id: string, label: string) => {
+    if (!confirm(`このリクエストを削除しますか？\n${label}`)) return;
 
-  if (!uid) {
-    return (
-      <main className={styles.page}>
-        <div className={styles.container}>
-          <div className={styles.headerRow}>
-            <h1 className={styles.title}>レンタルリクエスト一覧</h1>
-          </div>
-          <div className={styles.empty}>ログインしてください。</div>
-        </div>
-      </main>
-    );
+    setDeletingId(id);
+    try {
+      await deleteDoc(doc(db, "rentalRequests", id));
+    } catch (e) {
+      console.error(e);
+      alert("削除に失敗しました");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // ===== 表示分岐（return だけで制御） =====
+  if (!ready) {
+    return <div className={styles.page}><div className={styles.container}>読み込み中...</div></div>;
+  }
+
+  if (!isAdminEmail) {
+    return <div className={styles.page}><div className={styles.container}>管理者専用ページです</div></div>;
   }
 
   return (
@@ -128,38 +139,48 @@ export default function RentalRequestsPage() {
           <div className={styles.empty}>リクエストはまだありません。</div>
         ) : (
           <div className={styles.partsGrid}>
-            {items.map((r) => (
-              <div key={r.id} className={styles.cardWrap}>
-                <div className={styles.cardButton}>
-                  <div className={styles.cardUnit}>
-                    <div className={styles.kv}>
-                      <div className={styles.partName}>{r.name ?? "（名前なし）"}</div>
-                      <div className={styles.animal}>{statusLabel(r.status)}</div>
-                    </div>
+            {items.map((r) => {
+              const label = `${r.name ?? "（名前なし）"} / ${fmtDateRange(
+                r.startDate,
+                r.endDate
+              )}`;
 
-                    <div className={styles.badge}>
-                      期間: {fmtDateRange(r.startDate, r.endDate)}
-                    </div>
+              return (
+                <div key={r.id} className={styles.cardWrap}>
+                  <div className={styles.cardButton}>
+                    <div className={styles.cardUnit}>
+                      <div className={styles.kv}>
+                        <div className={styles.partName}>{r.name ?? "（名前なし）"}</div>
+                        <div className={styles.animal}>{statusLabel(r.status)}</div>
+                      </div>
 
-                    <div className={styles.animal}>
-                      rentalId: <span style={{ fontFamily: "monospace" }}>{r.rentalId ?? "-"}</span>
-                    </div>
+                      <div className={styles.badge}>
+                        期間: {fmtDateRange(r.startDate, r.endDate)}
+                      </div>
 
-                    <div className={styles.animal}>
-                      連絡先: {r.contact ?? "-"}
-                    </div>
+                      <div className={styles.animal}>
+                        rentalId: <span style={{ fontFamily: "monospace" }}>{r.rentalId ?? "-"}</span>
+                      </div>
 
-                    <div className={styles.animal}>
-                      送信: {fmtDateTime(r.createdAt)}
-                    </div>
+                      <div className={styles.animal}>連絡先: {r.contact ?? "-"}</div>
+                      <div className={styles.animal}>送信: {fmtDateTime(r.createdAt)}</div>
+                      <div className={styles.desc}>備考: {r.note ?? "-"}</div>
 
-                    <div className={styles.desc}>
-                      備考: {r.note ?? "-"}
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <button
+                          type="button"
+                          className={styles.deleteButton}
+                          onClick={() => deleteRentalRequest(r.id, label)}
+                          disabled={deletingId === r.id}
+                        >
+                          {deletingId === r.id ? "削除中..." : "削除"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

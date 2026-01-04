@@ -1,31 +1,26 @@
 // app/login/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import "./login.css";
-import {loginWithEmailPassword}from "./lib/loginActions"
-import { useEffect } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "";
-
+  // すでにログインしてたらトップへ
   useEffect(() => {
-    const auth = getAuth();
-
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // ★ すでにログイン済みなら管理画面へ
-        router.replace("/admin");
+        router.replace("/");
       }
     });
-
     return () => unsub();
   }, [router]);
 
@@ -38,17 +33,15 @@ export default function LoginPage() {
       return;
     }
 
-    if (email !== ADMIN_EMAIL) {
-      setError("このアカウントは許可されていません");
-      return;
-    }
-
+    setLoading(true);
     try {
-      await loginWithEmailPassword({ email, password });
-      router.push("/admin");
+      await signInWithEmailAndPassword(auth, email, password);
+      router.replace("/"); // ログイン後の遷移先
     } catch (e) {
-      console.warn(e);
-      setError(e instanceof Error ? e.message : "ログインに失敗しました");
+      console.warn("login error:", e);
+      setError("ログインに失敗しました");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -74,10 +67,14 @@ export default function LoginPage() {
             className="login-input"
           />
 
-          <button type="submit" className="login-button">
-            ログイン
+          <button
+            type="submit"
+            className="login-button"
+            disabled={loading}
+          >
+            {loading ? "ログイン中..." : "ログイン"}
           </button>
-          
+
           <button
             type="button"
             onClick={() => router.push("/signup")}
@@ -92,4 +89,3 @@ export default function LoginPage() {
     </main>
   );
 }
-

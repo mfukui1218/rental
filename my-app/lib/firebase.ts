@@ -28,3 +28,9 @@ export async function getMessagingIfSupported() {
   const ok = await isSupported();
   return ok ? getMessaging(app) : null;
 }
+
+export function isAdminEmail(): boolean {
+  const admin = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const email = auth.currentUser?.email;
+  return !!admin && !!email && email.toLowerCase() === admin.toLowerCase();
+}

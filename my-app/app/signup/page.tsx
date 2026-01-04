@@ -2,66 +2,42 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import styles from "./signup.module.css";
-import { signupWithEmailPassword } from "./lib/signupActions";
-import { requestApproval } from "./lib/approvalActions";
 
 export default function SignUpPage() {
   const router = useRouter();
 
-  // 登録用
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  // 許可申請用
-  const [requestEmail, setRequestEmail] = useState("");
   const [error, setError] = useState("");
-  const [requestStatus, setRequestStatus] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "";
-  
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setRequestStatus("");
-  
+
     if (!email || !password || !confirmPassword) {
       setError("未入力の項目があります");
       return;
     }
+
     if (password !== confirmPassword) {
       setError("パスワードが一致しません");
       return;
     }
-  
-    // ★ 管理者1人だけ作成を許可
-    if (!ADMIN_EMAIL || email !== ADMIN_EMAIL) {
-      setError("このメールアドレスではアカウント作成できません");
-      return;
-    }
-  
+
+    setLoading(true);
     try {
-      await signupWithEmailPassword({ email, password, confirmPassword });
-      router.push("/admin");
+      await createUserWithEmailAndPassword(auth, email, password);
+      router.replace("/"); // 登録後トップへ
     } catch (e) {
       console.warn("signup error:", e);
-      setError(e instanceof Error ? e.message : "アカウント作成に失敗しました");
-    }
-  }
-
-  async function handleRequestApproval() {
-    setError("");
-    setRequestStatus(""); 
-
-    try {
-      await requestApproval(requestEmail);
-      setRequestEmail("");
-      setRequestStatus("許可申請を送信しました。承認されると登録できるようになります。");
-    } catch (e) {
-      console.warn("requestApproval error:", e);
-      if (e instanceof Error) setRequestStatus(e.message);
-      else setRequestStatus("許可申請の送信に失敗しました。");
+      setError("アカウント作成に失敗しました");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -98,14 +74,18 @@ export default function SignUpPage() {
             className={styles.input}
           />
 
-          <button type="submit" className={styles.button}>
-            登録
+          <button
+            type="submit"
+            className={styles.button}
+            disabled={loading}
+          >
+            {loading ? "作成中..." : "登録"}
           </button>
 
           <button
             type="button"
             onClick={() => router.push("/login")}
-            className={styles.button}
+            className={styles.input}
           >
             ログイン画面へ戻る
           </button>

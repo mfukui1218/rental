@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./enter.module.css";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+
+
 
 export default function EnterPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
   const submit = async () => {
     setError(null);
     setLoading(true);

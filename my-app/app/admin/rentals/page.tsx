@@ -12,6 +12,7 @@ import {
   limit,
   deleteDoc,
   doc,
+  updateDoc,
 } from "firebase/firestore";
 import {
   ref,
@@ -21,6 +22,7 @@ import {
 } from "firebase/storage";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import styles from "./rental.module.css";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 type RentalItem = {
   id: string;
@@ -31,11 +33,19 @@ type RentalItem = {
   createdAt: number;
 };
 
+function storagePathFromDownloadUrl(url: string): string | null {
+  try {
+    const decoded = decodeURIComponent(url);
+    const match = decoded.match(/\/o\/(.+)\?/);
+    return match?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default function RentalCreate() {
   const router = useRouter();
   const auth = getAuth();
-
-  const [authReady, setAuthReady] = useState(false);
 
   // フォーム
   const [file, setFile] = useState<File | null>(null);
@@ -44,19 +54,20 @@ export default function RentalCreate() {
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // 編集モード
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingImageUrl, setEditingImageUrl] = useState<string>(""); // 現在の画像URL保持
+
   // 一覧
   const [rentals, setRentals] = useState<RentalItem[]>([]);
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
-  /* ===== 認証ガード ===== */
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (!user) router.replace("/login");
-      else setAuthReady(true);
-    });
-    return () => unsub();
-  }, [auth, router]);
+  const { user, ready ,isAdminEmail} = useRequireAuth();
+
+  if (!ready || !isAdminEmail) {
+    return <div>読み込み中...</div>;
+  }
 
   /* ===== 一覧ロード ===== */
   const loadRentals = async () => {
@@ -91,37 +102,84 @@ export default function RentalCreate() {
     }
   };
 
-  useEffect(() => {
-    if (authReady) loadRentals();
-  }, [authReady]);
+  const resetForm = () => {
+    setFile(null);
+    setName("");
+    setCategory("");
+    setDescription("");
+    setEditingId(null);
+    setEditingImageUrl("");
+  };
 
-  /* ===== 登録 ===== */
+  /* ===== 編集開始 ===== */
+  const startEdit = (item: RentalItem) => {
+    setEditingId(item.id);
+    setEditingImageUrl(item.imageUrl || "");
+    setFile(null); // 新規ファイルは未選択に戻す
+    setName(item.name);
+    setCategory(item.category);
+    setDescription(item.description);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  /* ===== 登録/更新 ===== */
   const submit = async () => {
-    if (!authReady) return alert("ログイン確認中です");
-    if (!file || !name) return alert("必須項目が未入力です");
+    if (!name.trim()) return alert("商品名は必須です");
+
+    // 新規作成のときだけ画像必須にする
+    if (!editingId && !file) return alert("画像を選択してください");
 
     setSaving(true);
     try {
-      const path = `rentals/${crypto.randomUUID()}_${file.name}`;
-      const storageRef = ref(storage, path);
+      let imageUrl = editingImageUrl;
 
-      await uploadBytes(storageRef, file, { contentType: file.type });
-      const imageUrl = await getDownloadURL(storageRef);
+      // 画像を選び直した場合のみ差し替え
+      if (file) {
+        const path = `rentals/${crypto.randomUUID()}_${file.name}`;
+        const storageRef = ref(storage, path);
 
-      await addDoc(collection(db, "rentals"), {
-        name,
-        category,
-        description,
-        imageUrl,
-        createdAt: Date.now(),
-      });
+        await uploadBytes(storageRef, file, { contentType: file.type });
+        imageUrl = await getDownloadURL(storageRef);
 
-      setFile(null);
-      setName("");
-      setCategory("");
-      setDescription("");
+        // 編集中で、古い画像があるなら消す（任意）
+        if (editingId && editingImageUrl) {
+          const oldPath = storagePathFromDownloadUrl(editingImageUrl);
+          if (oldPath) {
+            try {
+              await deleteObject(ref(storage, oldPath));
+            } catch (e) {
+              // 失敗しても更新自体は続行
+              console.warn("old image delete failed", e);
+            }
+          }
+        }
+      }
 
+      if (editingId) {
+        // 更新
+        await updateDoc(doc(db, "rentals", editingId), {
+          name: name.trim(),
+          category: category.trim(),
+          description: description.trim(),
+          imageUrl: imageUrl || "",
+          // createdAt は更新しない
+        });
+      } else {
+        // 新規
+        await addDoc(collection(db, "rentals"), {
+          name: name.trim(),
+          category: category.trim(),
+          description: description.trim(),
+          imageUrl: imageUrl || "",
+          createdAt: Date.now(),
+        });
+      }
+
+      resetForm();
       await loadRentals();
+    } catch (e) {
+      console.error(e);
+      alert(editingId ? "更新に失敗しました" : "登録に失敗しました");
     } finally {
       setSaving(false);
     }
@@ -135,14 +193,13 @@ export default function RentalCreate() {
       await deleteDoc(doc(db, "rentals", item.id));
 
       if (item.imageUrl) {
-        const decoded = decodeURIComponent(item.imageUrl);
-        const match = decoded.match(/\/o\/(.+)\?/);
-        if (match?.[1]) {
-          await deleteObject(ref(storage, match[1]));
-        }
+        const p = storagePathFromDownloadUrl(item.imageUrl);
+        if (p) await deleteObject(ref(storage, p));
       }
 
+      // 編集中のやつを消したらフォームも戻す
       setRentals((prev) => prev.filter((r) => r.id !== item.id));
+      if (editingId === item.id) resetForm();
     } catch (e) {
       console.error(e);
       alert("削除に失敗しました");
@@ -157,12 +214,40 @@ export default function RentalCreate() {
 
         {/* 登録フォーム */}
         <div className={styles.form}>
-          <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+            <div style={{ fontWeight: 700 }}>
+              {editingId ? "編集モード" : "新規登録"}
+            </div>
+            {editingId ? (
+              <button
+                type="button"
+                className={styles.editButton}
+                onClick={resetForm}
+                disabled={saving}
+              >
+                編集をやめる
+              </button>
+            ) : null}
+          </div>
+
+          {/* 編集時は画像必須にしない（差し替えたい時だけ選ぶ） */}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+          {editingId && editingImageUrl ? (
+            <div style={{ fontSize: 12, opacity: 0.85 }}>
+              画像：未選択なら現状維持
+            </div>
+          ) : null}
+
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="商品名" />
           <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="料金" />
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="説明" />
+
           <button onClick={submit} disabled={saving}>
-            {saving ? "保存中..." : "登録"}
+            {saving ? (editingId ? "更新中..." : "保存中...") : (editingId ? "更新" : "登録")}
           </button>
         </div>
 
@@ -191,22 +276,34 @@ export default function RentalCreate() {
                         className={styles.thumbImg}
                       />
                     </div>
-              
+
                     <div>
                       <div className={styles.animal}>{r.category}</div>
                       <div className={styles.partName}>{r.name}</div>
                       <div className={styles.desc}>{r.description}</div>
                     </div>
                   </button>
-              
-                  {/* 削除ボタン（被せない） */}
-                  <button
-                    type="button"
-                    className={styles.deleteButton}
-                    onClick={() => deleteRental(r)}
-                  >
-                    削除
-                  </button>
+
+                  {/* 操作ボタン */}
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                    <button
+                      type="button"
+                      className={styles.editButton}
+                      onClick={() => startEdit(r)}
+                      disabled={saving}
+                    >
+                      編集
+                    </button>
+
+                    <button
+                      type="button"
+                      className={styles.deleteButton}
+                      onClick={() => deleteRental(r)}
+                      disabled={saving}
+                    >
+                      削除
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
