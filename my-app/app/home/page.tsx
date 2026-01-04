@@ -4,12 +4,14 @@
 import { useRouter } from "next/navigation";
 import styles from "./home.module.css";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 type MenuItem = {
   title: string;
   desc: string;
   href: string;
-  variant?: "normal" | "admin";
+  variant?: "admin";
 };
 
 export default function HomePage() {
@@ -20,17 +22,37 @@ export default function HomePage() {
     return <div>読み込み中...</div>;
   }
 
-  const items: MenuItem[] = [
-    { title: "レンタル商品一覧", desc: "レンタルできる物件を見る", href: "/rentals" },
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.replace("/login");
+  };
 
-    // user がいるときだけ
+  const items: MenuItem[] = [
+    {
+      title: "レンタル商品一覧",
+      desc: "レンタルできる物件を見る",
+      href: "/rentals",
+    },
+
     ...(user
-      ? [{ title: "トーク", desc: "管理者とのトーク", href: `/talk/${user.uid}` } as MenuItem]
+      ? [
+          {
+            title: "トーク",
+            desc: "管理者とのトーク",
+            href: `/talk/${user.uid}`,
+          },
+        ]
       : []),
 
-    // 管理者だけ表示（見た目の制御）
     ...(isAdminEmail
-      ? [{ title: "管理者用", desc: "物件・予約の管理者用", href: "/admin", variant: "admin" } as MenuItem]
+      ? [
+          {
+            title: "管理者用",
+            desc: "物件・予約の管理者用",
+            href: "/admin",
+            variant: "admin" as const,
+          },
+        ]
       : []),
   ];
 
@@ -40,6 +62,14 @@ export default function HomePage() {
         <header className={styles.header}>
           <h1 className={styles.title}>HOME</h1>
           <p className={styles.subtitle}>レンタル管理ポータル</p>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className={styles.logoutButton}
+          >
+            ログアウト
+          </button>
         </header>
 
         <div className={styles.grid}>
