@@ -58,39 +58,34 @@ export default function HomePage() {
 
   return (
     <main className={styles.page}>
+      {/* ★ 右上固定ログアウト */}
+      <button
+        type="button"
+        onClick={handleLogout}
+        className={styles.logoutButton}
+      >
+        ログアウト
+      </button>
+      
       <div className={styles.container}>
         <header className={styles.header}>
           <h1 className={styles.title}>HOME</h1>
           <p className={styles.subtitle}>レンタル管理ポータル</p>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className={styles.logoutButton}
-          >
-            ログアウト
-          </button>
         </header>
-
+      
         <div className={styles.grid}>
-          {items.map((item) => {
-            const cls =
-              item.variant === "admin"
+          {items.map((item) => (
+            <button
+              key={item.title}
+              className={item.variant === "admin"
                 ? `${styles.card} ${styles.adminCard}`
-                : styles.card;
-
-            return (
-              <button
-                key={item.title}
-                type="button"
-                className={cls}
-                onClick={() => router.push(item.href)}
-              >
-                <div className={styles.cardTitle}>{item.title}</div>
-                <div className={styles.cardDesc}>{item.desc}</div>
-              </button>
-            );
-          })}
+                : styles.card}
+              onClick={() => router.push(item.href)}
+            >
+              <div className={styles.cardTitle}>{item.title}</div>
+              <div className={styles.cardDesc}>{item.desc}</div>
+            </button>
+          ))}
         </div>
       </div>
     </main>
