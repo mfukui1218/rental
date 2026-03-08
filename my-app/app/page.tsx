@@ -44,11 +44,11 @@ export default function Page() {
           }}
         >
           限定公開のレンタル商品一覧です。<br />
-          ご利用には専用パスワードが必要です。
+          ご利用にはログインが必要です。
         </p>
 
         <a
-          href="/enter"
+          href="/login"
           style={{
             display: "inline-block",
             padding: "14px 28px",
@@ -63,7 +63,7 @@ export default function Page() {
             transition: "all 0.25s",
           }}
         >
-          パスワードを入力して入室
+          ログインして入室
         </a>
       </div>
     </main>

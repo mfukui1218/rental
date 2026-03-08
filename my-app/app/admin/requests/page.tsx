@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   collection,
   onSnapshot,
@@ -20,6 +21,7 @@ type RentalRequest = {
   name?: string;
   contact?: string;
   note?: string;
+  uid?: string;
   startDate?: string;
   endDate?: string;
   createdAt?: Timestamp | any;
@@ -72,14 +74,15 @@ function statusLabel(s?: RentalRequest["status"]) {
 
 export default function RentalRequestsPage() {
   // ✅ Hooks は最上部で全部呼ぶ
-  const { user, ready, isAdminEmail } = useRequireAuth();
+  const router = useRouter();
+  const { user, ready, isAdminClaim } = useRequireAuth();
 
   const [items, setItems] = useState<RentalRequest[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // ✅ admin かつ user が確定した後にだけ購読
   useEffect(() => {
-    if (!ready || !user || !isAdminEmail) return;
+    if (!ready || !user || !isAdminClaim ) return;
 
     const q = query(
       collection(db, "rentalRequests"),
@@ -102,7 +105,7 @@ export default function RentalRequestsPage() {
     );
 
     return () => unsub();
-  }, [ready, user, isAdminEmail]);
+  }, [ready, user, isAdminClaim ]);
 
   const deleteRentalRequest = async (id: string, label: string) => {
     if (!confirm(`このリクエストを削除しますか？\n${label}`)) return;
@@ -123,7 +126,7 @@ export default function RentalRequestsPage() {
     return <div className={styles.page}><div className={styles.container}>読み込み中...</div></div>;
   }
 
-  if (!isAdminEmail) {
+  if (!isAdminClaim ) {
     return <div className={styles.page}><div className={styles.container}>管理者専用ページです</div></div>;
   }
 
@@ -166,7 +169,16 @@ export default function RentalRequestsPage() {
                       <div className={styles.animal}>送信: {fmtDateTime(r.createdAt)}</div>
                       <div className={styles.desc}>備考: {r.note ?? "-"}</div>
 
-                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                        {r.uid && (
+                          <button
+                            type="button"
+                            className={styles.deleteButton}
+                            onClick={() => router.push(`/talk/${r.uid}`)}
+                          >
+                            トーク
+                          </button>
+                        )}
                         <button
                           type="button"
                           className={styles.deleteButton}

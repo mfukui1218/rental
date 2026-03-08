@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import styles from "./page.module.css";
 
 export default function RequestClient() {
   const router = useRouter();
+  useRequireAuth();
   const searchParams = useSearchParams();
 
   const rentalId = searchParams.get("rentalId");
@@ -59,6 +61,7 @@ export default function RequestClient() {
         startDate,
         endDate,
         note,
+        uid: auth.currentUser?.uid ?? null,
         createdAt: serverTimestamp(),
         status: "pending",
       });

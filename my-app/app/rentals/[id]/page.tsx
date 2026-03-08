@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import styles from "./rentalDetail.module.css";
 
 type RentalDoc = {
@@ -15,6 +16,7 @@ type RentalDoc = {
 
 export default function RentalPage() {
   const router = useRouter();
+  const { ready } = useRequireAuth();
   const params = useParams<{ id: string }>();
 
   const rawId = params?.id;

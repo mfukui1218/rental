@@ -18,7 +18,7 @@ export default function LoginPage() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
-        router.replace("/");
+        router.replace("/home");
       }
     });
     return () => unsub();
@@ -36,7 +36,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/"); // ログイン後の遷移先
+      router.replace("/home"); // ログイン後の遷移先
     } catch (e) {
       console.warn("login error:", e);
       setError("ログインに失敗しました");

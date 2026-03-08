@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
@@ -14,17 +16,19 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import styles from "./talk.module.css";
 
 type Message = {
   id: string;
   text: string;
   senderUid: string;
+  senderName?: string;
   senderRole: "user" | "admin";
   createdAt?: any;
 };
 
 export default function TalkPage() {
-  // ✅ Hooksは必ず上から全部呼ぶ（returnを先にしない）
+  const router = useRouter();
   const params = useParams();
   const roomId = useMemo(() => {
     const raw = (params as any)?.roomId;
@@ -39,13 +43,54 @@ export default function TalkPage() {
   const [roomReady, setRoomReady] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // 名前
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [nameLoading, setNameLoading] = useState(true);
+
+  // 管理者用：相手ユーザーの名前
+  const [roomUserName, setRoomUserName] = useState<string | null>(null);
+
   const canAccess = useMemo(() => {
     return !!uid && !!roomId && (isAdminClaim || uid === roomId);
   }, [uid, roomId, isAdminClaim]);
 
-  // ✅ room の用意（本人 or admin が roomId の room を触れる前提）
+  // Firestoreからユーザー名を取得
   useEffect(() => {
-    // ready前は何もしない（Hookは呼ばれてる）
+    if (!ready || !uid) return;
+    setNameLoading(true);
+
+    (async () => {
+      try {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        const name = userDoc.data()?.displayName;
+        if (name) {
+          setDisplayName(name);
+        }
+      } catch (e) {
+        console.error("name fetch error:", e);
+      } finally {
+        setNameLoading(false);
+      }
+    })();
+  }, [ready, uid]);
+
+  // 管理者の場合、roomId（相手ユーザー）の名前を取得
+  useEffect(() => {
+    if (!ready || !isAdminClaim || !roomId) return;
+
+    (async () => {
+      try {
+        const userDoc = await getDoc(doc(db, "users", roomId));
+        const name = userDoc.data()?.displayName;
+        setRoomUserName(name ?? null);
+      } catch (e) {
+        console.error("room user name fetch error:", e);
+      }
+    })();
+  }, [ready, isAdminClaim, roomId]);
+
+  // room の用意
+  useEffect(() => {
     if (!ready) return;
     if (!uid || !roomId) {
       setRoomReady(false);
@@ -63,7 +108,7 @@ export default function TalkPage() {
         roomRef,
         {
           type: "support",
-          userId: roomId, // ★所有者は roomId（＝ユーザーuid）
+          userId: roomId,
           updatedAt: serverTimestamp(),
           createdAt: serverTimestamp(),
         },
@@ -77,7 +122,7 @@ export default function TalkPage() {
     });
   }, [ready, uid, roomId, canAccess]);
 
-  // ✅ messages subscribe（roomReady の後）
+  // messages subscribe
   useEffect(() => {
     if (!ready) return;
     if (!uid || !roomId || !roomReady) return;
@@ -109,6 +154,17 @@ export default function TalkPage() {
     return () => unsub();
   }, [ready, uid, roomId, roomReady]);
 
+  const deleteMessage = async (messageId: string) => {
+    if (!roomId) return;
+    if (!confirm("このメッセージを削除しますか？")) return;
+    try {
+      await deleteDoc(doc(db, "rooms", roomId, "messages", messageId));
+    } catch (e: any) {
+      console.error(e);
+      alert("削除に失敗しました");
+    }
+  };
+
   const send = async () => {
     if (!ready) return;
     if (!uid) return alert("ログインしてください");
@@ -123,6 +179,7 @@ export default function TalkPage() {
       await addDoc(collection(db, "rooms", roomId, "messages"), {
         text: text.trim(),
         senderUid: uid,
+        senderName: isAdminClaim ? "管理者" : (displayName ?? "名無し"),
         senderRole,
         createdAt: serverTimestamp(),
       });
@@ -133,63 +190,78 @@ export default function TalkPage() {
     }
   };
 
-  // ✅ ここから下で表示分岐（returnは最後）
-  if (!ready) return <div style={{ padding: 24 }}>読み込み中...</div>;
-  if (!uid) return <div style={{ padding: 24 }}>ログインしてください</div>;
-  if (!roomId) return <div style={{ padding: 24 }}>roomId が不正です</div>;
+  // 表示分岐
+  if (!ready || nameLoading)
+    return <div className={styles.loading}>読み込み中...</div>;
+  if (!uid) return <div className={styles.loading}>ログインしてください</div>;
+  if (!roomId) return <div className={styles.loading}>roomId が不正です</div>;
 
   if (!canAccess) {
-    return (
-      <div style={{ padding: 24 }}>
-        <div>このトークにはアクセスできません</div>
-        <div style={{ marginTop: 8, fontFamily: "monospace", fontSize: 12 }}>
-          uid: {uid}
-          <br />
-          roomId: {roomId}
-        </div>
-      </div>
-    );
+    return <div className={styles.loading}>このトークにはアクセスできません</div>;
   }
 
-  if (!roomReady) return <div style={{ padding: 24 }}>読み込み中...</div>;
+  if (!roomReady) return <div className={styles.loading}>読み込み中...</div>;
 
   return (
-    <main style={{ padding: 16, maxWidth: 640, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 12 }}>
-        トーク {isAdminClaim ? `（ユーザー: ${roomId}）` : ""}
-      </h1>
+    <main className={styles.page}>
+      <div className={styles.header}>
+        <button
+          type="button"
+          className={styles.backButton}
+          onClick={() => router.back()}
+        >
+          戻る
+        </button>
+        <div>
+          <div className={styles.headerTitle}>
+            {isAdminClaim
+              ? (roomUserName ?? "名前未設定")
+              : "管理者とのトーク"}
+          </div>
+          {!isAdminClaim && (
+            <div className={styles.headerSub}>{displayName}</div>
+          )}
+        </div>
+      </div>
 
-      <div
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: 8,
-          padding: 12,
-          height: "60vh",
-          overflowY: "auto",
-          marginBottom: 12,
-        }}
-      >
+      <div className={styles.messagesArea}>
+        {messages.length === 0 && (
+          <div style={{ textAlign: "center", opacity: 0.4, marginTop: 40, fontSize: 14 }}>
+            メッセージはまだありません
+          </div>
+        )}
         {messages.map((m) => {
           const mine = m.senderUid === uid;
           return (
             <div
               key={m.id}
-              style={{
-                marginBottom: 8,
-                textAlign: mine ? "right" : "left",
-              }}
+              className={`${styles.msgRow} ${mine ? styles.msgRowMine : styles.msgRowOther}`}
             >
-              <div
-                style={{
-                  display: "inline-block",
-                  padding: "6px 10px",
-                  borderRadius: 8,
-                  background: mine ? "#4f46e5" : "#e5e7eb",
-                  color: mine ? "#fff" : "#000",
-                  maxWidth: "80%",
-                }}
-              >
-                {m.text}
+              <div className={styles.senderName}>
+                {m.senderName ?? (m.senderRole === "admin" ? "管理者" : "名無し")}
+              </div>
+              <div className={styles.bubbleWrap}>
+                {isAdminClaim && !mine && (
+                  <button
+                    onClick={() => deleteMessage(m.id)}
+                    className={styles.deleteMsg}
+                  >
+                    削除
+                  </button>
+                )}
+                <div
+                  className={`${styles.bubble} ${mine ? styles.bubbleMine : styles.bubbleOther}`}
+                >
+                  {m.text}
+                </div>
+                {isAdminClaim && mine && (
+                  <button
+                    onClick={() => deleteMessage(m.id)}
+                    className={styles.deleteMsg}
+                  >
+                    削除
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -197,14 +269,17 @@ export default function TalkPage() {
         <div ref={bottomRef} />
       </div>
 
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className={styles.inputBar}>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="メッセージを入力"
-          style={{ flex: 1, padding: 8 }}
+          className={styles.textInput}
         />
-        <button onClick={send}>送信</button>
+        <button onClick={send} className={styles.sendButton}>
+          送信
+        </button>
       </div>
     </main>
   );

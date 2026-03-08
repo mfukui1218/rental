@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import styles from "./rentals.module.css";
 
 type RentalItem = {
@@ -16,12 +17,14 @@ type RentalItem = {
 
 export default function RentalsPage() {
   const router = useRouter();
+  const { ready } = useRequireAuth();
 
   const [rentals, setRentals] = useState<RentalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!ready) return;
     const loadRentals = async () => {
       setLoading(true);
       setError(null);
@@ -54,14 +57,13 @@ export default function RentalsPage() {
     };
 
     loadRentals();
-  }, []);
+  }, [ready]);
 
   return (
     <main className={styles.page}>
       <div className={styles.container}>
         <header>
           <h1 className={styles.title}>レンタル商品一覧</h1>
-          <p className={styles.subtitle}>公開一覧（ログイン不要）</p>
         </header>
 
         {loading ? (

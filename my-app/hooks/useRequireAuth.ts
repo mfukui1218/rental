@@ -12,11 +12,15 @@ export function useRequireAuth() {
   const [ready, setReady] = useState(false);
 
   // ★ custom claims admin（Firestore rules と同じ判定）
-  const [isAdminClaim, setIsAdminClaim] = useState(false);
+  const [isAdminEmail, setIsAdminClaim] = useState(false);
 
   // （表示用）env の admin email 判定：UIでメニュー出すだけに使う
-  const isAdminEmail =
-    !!user?.email && user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const isAdminClaim =
+    !!user?.email && adminEmails.includes(user.email.toLowerCase());
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -65,5 +69,5 @@ export function useRequireAuth() {
     return () => unsub();
   }, [router]);
 
-  return { user, ready, isAdminEmail, isAdminClaim };
+  return { user, ready, isAdminClaim };
 }

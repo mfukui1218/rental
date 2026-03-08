@@ -7,10 +7,10 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export default function AdminPage() {
   const router = useRouter();
-  const { ready, isAdminEmail } = useRequireAuth();
+  const { ready, isAdminClaim  } = useRequireAuth();
 
   if (!ready) return <div>読み込み中...</div>;
-  if (!isAdminEmail) return <div>権限がありません</div>;
+  if (!isAdminClaim ) return <div>権限がありません</div>;
 
   return (
     <main className={styles.page}>
@@ -40,7 +40,7 @@ export default function AdminPage() {
             <p>ユーザー別にトークへ</p>
           </button>
 
-          <button className={styles.card} onClick={() => router.push("/")}>
+          <button className={styles.card} onClick={() => router.push("/home")}>
             <h2>トップへ</h2>
             <p>サイトトップに戻る</p>
           </button>

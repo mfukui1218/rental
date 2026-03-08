@@ -16,7 +16,7 @@ type MenuItem = {
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, ready, isAdminEmail } = useRequireAuth();
+  const { user, ready, isAdminClaim } = useRequireAuth();
 
   if (!ready) {
     return <div>読み込み中...</div>;
@@ -34,7 +34,7 @@ export default function HomePage() {
       href: "/rentals",
     },
 
-    ...(user
+    ...(user && !isAdminClaim
       ? [
           {
             title: "トーク",
@@ -44,7 +44,7 @@ export default function HomePage() {
         ]
       : []),
 
-    ...(isAdminEmail
+    ...(isAdminClaim 
       ? [
           {
             title: "管理者用",

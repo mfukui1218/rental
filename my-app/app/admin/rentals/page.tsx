@@ -63,9 +63,9 @@ export default function RentalCreate() {
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
-  const { user, ready ,isAdminEmail} = useRequireAuth();
+  const { user, ready ,isAdminClaim } = useRequireAuth();
 
-  if (!ready || !isAdminEmail) {
+  if (!ready || !isAdminClaim ) {
     return <div>読み込み中...</div>;
   }
 

@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import styles from "./signup.module.css";
 
 export default function SignUpPage() {
   const router = useRouter();
 
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,7 +21,7 @@ export default function SignUpPage() {
     e.preventDefault();
     setError("");
 
-    if (!email || !password || !confirmPassword) {
+    if (!displayName.trim() || !email || !password || !confirmPassword) {
       setError("未入力の項目があります");
       return;
     }
@@ -31,8 +33,14 @@ export default function SignUpPage() {
 
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.replace("/"); // 登録後トップへ
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "users", cred.user.uid), {
+        email: cred.user.email ?? null,
+        displayName: displayName.trim(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      router.replace("/home");
     } catch (e) {
       console.warn("signup error:", e);
       setError("アカウント作成に失敗しました");
@@ -47,6 +55,15 @@ export default function SignUpPage() {
         <h1 className={styles.title}>アカウント作成</h1>
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          <input
+            type="text"
+            placeholder="表示名（例：田中太郎）"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            required
+            className={styles.input}
+          />
+
           <input
             type="email"
             placeholder="メールアドレス"
