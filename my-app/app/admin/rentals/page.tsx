@@ -65,10 +65,6 @@ export default function RentalCreate() {
 
   const { user, ready ,isAdminClaim } = useRequireAuth();
 
-  if (!ready || !isAdminClaim ) {
-    return <div>読み込み中...</div>;
-  }
-
   /* ===== 一覧ロード ===== */
   const loadRentals = async () => {
     setListLoading(true);
@@ -101,6 +97,17 @@ export default function RentalCreate() {
       setListLoading(false);
     }
   };
+
+  // 初回マウント時に一覧をロード
+  useEffect(() => {
+    if (ready && isAdminClaim) {
+      loadRentals();
+    }
+  }, [ready, isAdminClaim]);
+
+  if (!ready || !isAdminClaim) {
+    return <div>読み込み中...</div>;
+  }
 
   const resetForm = () => {
     setFile(null);
