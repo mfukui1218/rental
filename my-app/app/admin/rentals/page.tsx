@@ -217,6 +217,13 @@ export default function RentalCreate() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
+        <button
+          type="button"
+          className={styles.backButton}
+          onClick={() => router.back()}
+        >
+          戻る
+        </button>
         <h1 className={styles.title}>レンタル商品登録</h1>
 
         {/* 登録フォーム */}

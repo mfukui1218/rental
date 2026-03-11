@@ -163,6 +163,13 @@ export default function RentalRequestsPage() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
+        <button
+          type="button"
+          className={styles.backButton}
+          onClick={() => router.back()}
+        >
+          戻る
+        </button>
         <div className={styles.headerRow}>
           <h1 className={styles.title}>レンタルリクエスト一覧</h1>
           <div className={styles.count}>件数: {items.length}</div>

@@ -103,6 +103,13 @@ export default function AdminUsersPage() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
+        <button
+          type="button"
+          className={styles.backButton}
+          onClick={() => router.back()}
+        >
+          戻る
+        </button>
         <div className={styles.headerRow}>
           <h1 className={styles.title}>ユーザー一覧</h1>
           <div className={styles.count}>件数: {users.length}</div>

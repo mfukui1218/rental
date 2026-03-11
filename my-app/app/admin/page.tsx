@@ -15,6 +15,13 @@ export default function AdminPage() {
   return (
     <main className={styles.page}>
       <div className={styles.container}>
+        <button
+          type="button"
+          className={styles.backButton}
+          onClick={() => router.back()}
+        >
+          戻る
+        </button>
         <h1 className={styles.title}>管理画面</h1>
         <p className={styles.subtitle}>管理者向けメニュー</p>
 
