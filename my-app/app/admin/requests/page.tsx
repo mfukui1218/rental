@@ -10,6 +10,7 @@ import {
   Timestamp,
   deleteDoc,
   doc,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import styles from "./page.module.css";
@@ -79,6 +80,35 @@ export default function RentalRequestsPage() {
 
   const [items, setItems] = useState<RentalRequest[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [rentalNames, setRentalNames] = useState<Record<string, string>>({});
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
+
+  // レンタル品の名前・ユーザーのニックネームを取得
+  useEffect(() => {
+    if (!ready || !user || !isAdminClaim) return;
+    (async () => {
+      try {
+        const [rentalSnap, userSnap] = await Promise.all([
+          getDocs(collection(db, "rentals")),
+          getDocs(collection(db, "users")),
+        ]);
+        const rMap: Record<string, string> = {};
+        rentalSnap.docs.forEach((d) => {
+          rMap[d.id] = (d.data() as any).name ?? "";
+        });
+        setRentalNames(rMap);
+
+        const uMap: Record<string, string> = {};
+        userSnap.docs.forEach((d) => {
+          const data = d.data() as any;
+          uMap[d.id] = data.displayName || data.name || "";
+        });
+        setUserNames(uMap);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [ready, user, isAdminClaim]);
 
   // ✅ admin かつ user が確定した後にだけ購読
   useEffect(() => {
@@ -162,9 +192,12 @@ export default function RentalRequestsPage() {
                       </div>
 
                       <div className={styles.animal}>
-                        rentalId: <span style={{ fontFamily: "monospace" }}>{r.rentalId ?? "-"}</span>
+                        商品: {r.rentalId ? (rentalNames[r.rentalId] || r.rentalId) : "-"}
                       </div>
 
+                      <div className={styles.animal}>
+                        ニックネーム: {r.uid ? (userNames[r.uid] || "-") : "-"}
+                      </div>
                       <div className={styles.animal}>連絡先: {r.contact ?? "-"}</div>
                       <div className={styles.animal}>送信: {fmtDateTime(r.createdAt)}</div>
                       <div className={styles.desc}>備考: {r.note ?? "-"}</div>
