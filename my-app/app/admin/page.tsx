@@ -41,6 +41,11 @@ export default function AdminPage() {
             <p>リクエストを確認</p>
           </button>
 
+          <button className={styles.card} onClick={() => router.push("/admin/calendar")}>
+            <h2>予約カレンダー</h2>
+            <p>予約可能日を管理</p>
+          </button>
+
           {/* ★追加：ユーザー一覧（トーク） */}
           <button className={styles.card} onClick={() => router.push("/admin/users")}>
             <h2>ユーザー一覧</h2>

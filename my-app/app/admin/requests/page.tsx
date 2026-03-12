@@ -11,6 +11,9 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  updateDoc,
+  getDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import styles from "./page.module.css";
@@ -80,6 +83,7 @@ export default function RentalRequestsPage() {
 
   const [items, setItems] = useState<RentalRequest[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rentalNames, setRentalNames] = useState<Record<string, string>>({});
   const [userNames, setUserNames] = useState<Record<string, string>>({});
 
@@ -137,6 +141,57 @@ export default function RentalRequestsPage() {
     return () => unsub();
   }, [ready, user, isAdminClaim ]);
 
+  // 日付範囲から全日付文字列を生成
+  function getDatesInRange(start: string, end: string): string[] {
+    const dates: string[] = [];
+    const cur = new Date(start + "T00:00:00");
+    const last = new Date(end + "T00:00:00");
+    while (cur <= last) {
+      const y = cur.getFullYear();
+      const m = String(cur.getMonth() + 1).padStart(2, "0");
+      const d = String(cur.getDate()).padStart(2, "0");
+      dates.push(`${y}-${m}-${d}`);
+      cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+  }
+
+  // 承認
+  const approveRequest = async (r: RentalRequest) => {
+    if (!confirm(`「${r.name}」のリクエストを承認しますか？\n期間の日付が予約不可になります。`)) return;
+
+    setApprovingId(r.id);
+    try {
+      // ステータスを approved に更新
+      await updateDoc(doc(db, "rentalRequests", r.id), { status: "approved" });
+
+      // 期間内の日付を rental の blockedDates に追加
+      if (r.rentalId && r.startDate && r.endDate) {
+        const dates = getDatesInRange(r.startDate, r.endDate);
+        await updateDoc(doc(db, "rentals", r.rentalId), {
+          blockedDates: arrayUnion(...dates),
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      alert("承認に失敗しました");
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  // 却下
+  const rejectRequest = async (r: RentalRequest) => {
+    if (!confirm(`「${r.name}」のリクエストを却下しますか？`)) return;
+
+    try {
+      await updateDoc(doc(db, "rentalRequests", r.id), { status: "rejected" });
+    } catch (e) {
+      console.error(e);
+      alert("却下に失敗しました");
+    }
+  };
+
   const deleteRentalRequest = async (id: string, label: string) => {
     if (!confirm(`このリクエストを削除しますか？\n${label}`)) return;
 
@@ -191,7 +246,9 @@ export default function RentalRequestsPage() {
                     <div className={styles.cardUnit}>
                       <div className={styles.kv}>
                         <div className={styles.partName}>{r.name ?? "（名前なし）"}</div>
-                        <div className={styles.animal}>{statusLabel(r.status)}</div>
+                        <div className={`${styles.statusBadge} ${styles[`status_${r.status ?? "pending"}`]}`}>
+                          {statusLabel(r.status)}
+                        </div>
                       </div>
 
                       <div className={styles.badge}>
@@ -209,11 +266,30 @@ export default function RentalRequestsPage() {
                       <div className={styles.animal}>送信: {fmtDateTime(r.createdAt)}</div>
                       <div className={styles.desc}>備考: {r.note ?? "-"}</div>
 
-                      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                        {r.status === "pending" && (
+                          <>
+                            <button
+                              type="button"
+                              className={styles.approveButton}
+                              onClick={() => approveRequest(r)}
+                              disabled={approvingId === r.id}
+                            >
+                              {approvingId === r.id ? "処理中..." : "承認"}
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.rejectButton}
+                              onClick={() => rejectRequest(r)}
+                            >
+                              却下
+                            </button>
+                          </>
+                        )}
                         {r.uid && (
                           <button
                             type="button"
-                            className={styles.deleteButton}
+                            className={styles.talkButton}
                             onClick={() => router.push(`/talk/${r.uid}`)}
                           >
                             トーク

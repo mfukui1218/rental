@@ -1,0 +1,235 @@
+.page {
+  min-height: 100vh;
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(135deg, #141e30, #243b55);
+  color: #fff;
+}
+
+.container {
+  width: 100%;
+  max-width: 600px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 16px;
+  padding: 28px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-bottom: 20px;
+}
+
+.backButton {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 16px;
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== Field ===== */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.label {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 14px;
+}
+
+/* ===== Month nav ===== */
+.monthNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.navButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.navButton:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.monthLabel {
+  font-size: 18px;
+  font-weight: 600;
+  min-width: 120px;
+  text-align: center;
+}
+
+/* ===== Calendar grid ===== */
+.calendar {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.weekRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.weekDay {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 0;
+  opacity: 0.7;
+}
+
+.dayCell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: #fff;
+}
+
+.dayButton {
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.15s, transform 0.1s;
+}
+
+.dayButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Blocked (unavailable) */
+.blocked {
+  background: rgba(220, 50, 50, 0.55) !important;
+  color: #fff;
+  font-weight: 700;
+}
+
+.blocked:hover {
+  background: rgba(220, 50, 50, 0.7) !important;
+}
+
+/* Today */
+.today {
+  border: 2px solid rgba(100, 200, 255, 0.8);
+}
+
+/* Past dates */
+.past {
+  opacity: 0.4;
+}
+
+/* Sunday */
+.sun {
+  color: #ff9999;
+}
+
+/* Saturday */
+.sat {
+  color: #99bbff;
+}
+
+/* ===== Legend ===== */
+.legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendBox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.legendAvailable {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.legendBlocked {
+  background: rgba(220, 50, 50, 0.55);
+}
+
+/* ===== Actions ===== */
+.actions {
+  display: flex;
+  justify-content: center;
+}
+
+.saveButton {
+  padding: 12px 40px;
+  background: rgba(80, 160, 255, 0.3);
+  border: 1px solid rgba(80, 160, 255, 0.6);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.saveButton:hover {
+  background: rgba(80, 160, 255, 0.45);
+  transform: translateY(-2px);
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
